@@ -9,7 +9,18 @@ linePath1 = set()
 linePath2 = set()
 
 # list representing all the intersections between both lines
-intersectionsList = []
+intersectionsList = set()
+
+# list representing all the intersections between both lines with step counts to them per line
+intersectAndCount1 = set()
+intersectAndCount2 = set()
+
+lineTraceArray1 = []
+lineTraceArray2 = []
+
+#testLineData1 = ['R75','D30','R83','U83','L12','D49','R71','U7','L72']
+#testLineData2 = ['U62','R66','U55','R34','D71','R55','D58','R83']
+
 
 xVal = 1
 yVal = 1
@@ -17,7 +28,7 @@ yVal = 1
 
 
 # plots all points for a line (chucks sub-arrays into our outer array like: [1,4])
-def plotLine(lineData, lineResultArray):
+def plotLine(lineData, lineResultArray, lineTraceArray):
     global xVal, yVal
 
     # have to make sure we reset the global x and y everytime we call plotLine or when plotting multiple lines 
@@ -44,7 +55,9 @@ def plotLine(lineData, lineResultArray):
 
             # add this new xVal-yVal coordinate to that line's set
             lineResultArray.add((xVal, yVal))
-
+            
+            # add to this line trace array which keeps things in the order it was added for retracing with steps later
+            lineTraceArray.append([xVal, yVal])
 
 
 # takes two sets containing tuples representing both lines
@@ -56,7 +69,7 @@ def findIntersections(path1, path2, intersectionResultArray):
     allIntersections = set(linePath1) & set(linePath2)
 
     for intersect in allIntersections:            
-        intersectionResultArray.append([intersect[0], intersect[1]])
+        intersectionResultArray.add((intersect[0], intersect[1]))
 
 
 # takes a set of tuple intersections like [[0, 1], [147, 47]] and returns the lowest calculated distance from 
@@ -74,10 +87,54 @@ def findClosestIntersection(interesections):
     # return whichever shortest value exists in the shortestDistance var
     return shortestDistance
 
+# loops through each coord in linepath array checking if it is an intersection, 
+# if so, adds the counter value to a tuple for that intersection
+def findCountToIntersections(linePathArray, intersectionsArray, intersectWithCount):
+    runningCounter = 0
+    test = set()
+
+
+    for item in linePathArray:
+        # add the item temporarily to a test set for efficiently checking if it exists in the intersections list
+        test.add((item[0], item[1]))
+        runningCounter += 1
+
+
+        # if the current item exists in the intersection list, put the current count into a tuple if not continue
+        if len(test & intersectionsArray) > 0:
+            # build new tuple
+            newTuple = (item[0], item[1], runningCounter)
+            # add to our new list
+            intersectWithCount.add(newTuple)
+        
+        # remove the item from the temp list
+        test.remove((item[0], item[1]))
+    
+
+# this function takes both sets of intersections with their step counts
+# and seeks to add the step counts together for the matching intersections in each list 
+# and return the intersection count with the smallest number of steps
+def findStepCountPerIntersection(intersectWithCount1, intersectWithCount2):
+    lowestSteps = 0
+    
+    for item1 in intersectWithCount1:
+        for item2 in intersectWithCount2:
+            if item1[0] == item2[0] and item1[1] == item2[1]:
+                currentSteps = abs(item1[2]) + abs(item2[2])
+                
+                if currentSteps < lowestSteps or lowestSteps == 0:
+                    lowestSteps = currentSteps
+
+    print("LOWEST NUMBER OF STEPS HERE:")
+    print(lowestSteps)
+
+##### PART 1 #####
 
 # call the plotLine function for both lines
-plotLine(lineData1, linePath1)
-plotLine(lineData2, linePath2)
+# plotLine(lineData1, linePath1)
+# plotLine(lineData2, linePath2)
+plotLine(lineData1, linePath1, lineTraceArray1)
+plotLine(lineData2, linePath2, lineTraceArray2)
 
 # get a list of all intersections
 findIntersections(linePath1, linePath2, intersectionsList)
@@ -90,4 +147,9 @@ print(answer)
 
 ##### PART 2 #####
 
+# loop through each line path and find the number of steps to each intersection
+findCountToIntersections(lineTraceArray1, intersectionsList, intersectAndCount1)
+findCountToIntersections(lineTraceArray2, intersectionsList, intersectAndCount2)
 
+# loop through the arrays of intersections with step counts and sum the step counts for each matching intersection
+findStepCountPerIntersection(intersectAndCount1, intersectAndCount2)
